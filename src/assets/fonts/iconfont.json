@@ -1,0 +1,23 @@
+{
+  "id": "3225108",
+  "name": "shop",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "6337614",
+      "name": "锁",
+      "font_class": "suo",
+      "unicode": "e69d",
+      "unicode_decimal": 59037
+    },
+    {
+      "icon_id": "7447598",
+      "name": "人像-01",
+      "font_class": "renxiang-",
+      "unicode": "e629",
+      "unicode_decimal": 58921
+    }
+  ]
+}
