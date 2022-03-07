@@ -6,3 +6,17 @@ body,
   margin: 0;
   padding: 0;
 }
+.el-breadcrumb{
+  margin-bottom: 10px;
+  font-size: 20px;
+}
+.el-card {
+  box-shadow: 10px 10px 20px rgba(0, 0, 0, .2)!important;
+}
+.el-table {
+  margin-top: 16px;
+  font-size: 12px;
+}
+.el-pagination{
+  margin-top: 15px;
+}
