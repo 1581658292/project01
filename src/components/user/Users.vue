@@ -63,10 +63,10 @@
               size="small"
               @click="removeUserById(scope.row.id)"
             ></el-button>
-            <!-- 分配权限按钮 -->
+            <!-- 分配角色按钮 -->
             <el-tooltip
               effect="dark"
-              content="分配权限"
+              content="分配角色"
               placement="top"
               :enterable="false"
             >
@@ -74,6 +74,7 @@
                 type="warning"
                 icon="el-icon-setting"
                 size="small"
+                @click="setRole(scope.row)"
               ></el-button>
             </el-tooltip>
           </template>
@@ -143,23 +144,48 @@
         ref="editFormRef"
         label-width="70px"
       >
-      <!-- 用户名 -->
+        <!-- 用户名 -->
         <el-form-item label="用户名">
           <el-input v-model="editForm.username" disabled></el-input>
         </el-form-item>
         <!-- 邮箱 -->
-                <el-form-item label="邮箱" prop="email">
-          <el-input v-model="editForm.email" ></el-input>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="editForm.email"></el-input>
         </el-form-item>
         <!-- 电话号码 -->
-                <el-form-item label="手机" prop="mobile">
-          <el-input v-model="editForm.mobile" ></el-input>
+        <el-form-item label="手机" prop="mobile">
+          <el-input v-model="editForm.mobile"></el-input>
         </el-form-item>
       </el-form>
       <!-- 修改用户对话框底部 -->
       <span slot="footer" class="dialog-footer">
         <el-button @click="editDialogVisible = false">取 消</el-button>
-        <el-button type="primary" @click="editUserInfo"
+        <el-button type="primary" @click="editUserInfo">确 定</el-button>
+      </span>
+    </el-dialog>
+    <!-- 分配角色对话框 -->
+    <el-dialog
+      title="分配角色"
+      :visible.sync="setRoleDialogVisible"
+      width="50%"
+    @close="setRoleDialogClosed">
+      <p>当前用户：{{ userInfo.username }}</p>
+      <p>当前角色：{{ userInfo.role_name }}</p>
+      <p>
+        分配新角色：
+        <el-select v-model="selectedRoleId" placeholder="请选择">
+          <el-option
+            v-for="item in rolesList"
+            :key="item.id"
+            :label="item.roleName"
+            :value="item.id"
+          >
+          </el-option>
+        </el-select>
+      </p>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="setRoleDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="saveRoleInfo"
           >确 定</el-button
         >
       </span>
@@ -244,9 +270,7 @@ export default {
       // 控制修改用户对话框的显示与隐藏
       editDialogVisible: false,
       // 修改用户信息前，通过api查询到的用户信息
-      editForm: {
-
-      },
+      editForm: {},
       // 修改表单的验证规则对象
       editFormRules: {
         email: [
@@ -257,7 +281,15 @@ export default {
           { required: true, message: '请输入电话号码', trigger: 'blur' },
           { validator: checkMobile, trigger: 'blur' }
         ]
-      }
+      },
+      //   控制分配角色对话框的显示与隐藏
+      setRoleDialogVisible: false,
+      // 需要被分配角色的用户信息
+      userInfo: {},
+      // 所有角色列表数据
+      rolesList: [],
+      // 已选中的角色ID
+      selectedRoleId: ''
     }
   },
   created() {
@@ -333,13 +365,16 @@ export default {
     },
     // 修改用户信息，并提交
     editUserInfo() {
-      this.$refs.editFormRef.validate(async valid => {
+      this.$refs.editFormRef.validate(async (valid) => {
         if (!valid) return
         // 发起修改用户信息的请求
-        const { data: res } = await this.$http.put('users/' + this.editForm.id, {
-          email: this.editForm.email,
-          mobile: this.editForm.mobile
-        })
+        const { data: res } = await this.$http.put(
+          'users/' + this.editForm.id,
+          {
+            email: this.editForm.email,
+            mobile: this.editForm.mobile
+          }
+        )
         if (res.meta.status !== 200) {
           this.$message.error('更新用户信息失败')
         }
@@ -354,11 +389,15 @@ export default {
     // 根据ID值删除用户信息
     async removeUserById(id) {
       console.log(id)
-      const conFirmResult = await this.$confirm('此操作将永久删除该用户, 是否继续?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).catch(err => err)
+      const conFirmResult = await this.$confirm(
+        '此操作将永久删除该用户, 是否继续?',
+        '提示',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+      ).catch((err) => err)
       //   如果点击取消。$confirm就会报错,用catch捕获错误，将错误返回给conFirmResult，则返回cancel
       // 如果用户点击确认，返回的是字符串confirm
       //   console.log(conFirmResult)
@@ -368,6 +407,36 @@ export default {
       this.$message.success('已经删除')
       // 刷新用户列表
       this.getUserList()
+    },
+    // 展示分配角色的对话框
+    async setRole(userInfo) {
+      this.userInfo = userInfo
+      //   展示对话框之前，获取所有角色列表
+      const { data: res } = await this.$http.get('roles')
+      if (res.meta.status !== 200) {
+        return this.$message.error('获取角色列表失败')
+      }
+      this.rolesList = res.data
+      console.log(this.rolesList)
+      this.setRoleDialogVisible = true
+    },
+    // 点击按钮分配角色
+    async saveRoleInfo() {
+      if (!this.selectedRoleId) {
+        return this.$message.error('请选择要分配的角色')
+      }
+      const { data: res } = await this.$http.put(`users/${this.userInfo.id}/role`, { rid: this.selectedRoleId })
+      if (res.meta.status !== 200) {
+        return this.$message.error('更新用户角色失败')
+      }
+      this.getUserList()
+      this.setRoleDialogVisible = false
+      this.$message.success('更新用户角色成功')
+    },
+    // 监听分配角色对话框的关闭事件
+    setRoleDialogClosed() {
+      this.selectedRoleId = ''
+      this.userInfo = []
     }
   }
 }
