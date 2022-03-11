@@ -27,3 +27,12 @@ body,
   width: 100%;
   /* height:300px; */
   }
+  .el-steps{
+    margin: 15px auto;
+  }
+  .el-step__title {
+    font-size: 13px;
+  }
+  .ql-editor{
+    min-height: 300px;
+  }
